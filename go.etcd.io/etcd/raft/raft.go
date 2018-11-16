@@ -486,6 +486,8 @@ func (r *raft) maybeSendAppend(to uint64, sendIfEmpty bool) bool {
 			r.logger.Debugf("ignore sending snapshot to %x since it is not recently active", to)
 			return false
 		}
+		
+		r.logger.Warningf("sending snapshot to %x because with next=%d got errt=%v erre=%v", to, pr.Next, errt, erre)
 
 		m.Type = pb.MsgSnap
 		snapshot, err := r.raftLog.snapshot()
@@ -1293,7 +1295,7 @@ func (r *raft) handleAppendEntries(m pb.Message) {
 	if mlastIndex, ok := r.raftLog.maybeAppend(m.Index, m.LogTerm, m.Commit, m.Entries...); ok {
 		r.send(pb.Message{To: m.From, Type: pb.MsgAppResp, Index: mlastIndex})
 	} else {
-		r.logger.Debugf("%x [logterm: %d, index: %d] rejected msgApp [logterm: %d, index: %d] from %x",
+		r.logger.Warningf("%x [logterm: %d, index: %d] rejected msgApp [logterm: %d, index: %d] from %x",
 			r.id, r.raftLog.zeroTermOnErrCompacted(r.raftLog.term(m.Index)), m.Index, m.LogTerm, m.Index, m.From)
 		r.send(pb.Message{To: m.From, Type: pb.MsgAppResp, Index: m.Index, Reject: true, RejectHint: r.raftLog.lastIndex()})
 	}
