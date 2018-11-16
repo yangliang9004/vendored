@@ -14,7 +14,9 @@
 
 package raft
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
 	ProgressStateProbe ProgressStateType = iota
@@ -185,7 +187,7 @@ func (pr *Progress) needSnapshotAbort() bool {
 }
 
 func (pr *Progress) String() string {
-	return fmt.Sprintf("next = %d, match = %d, state = %s, waiting = %v, pendingSnapshot = %d", pr.Next, pr.Match, pr.State, pr.IsPaused(), pr.PendingSnapshot)
+	return fmt.Sprintf("next = %d, match = %d, state = %s, waiting = %v, pendingSnapshot = %d, inflight = %s", pr.Next, pr.Match, pr.State, pr.IsPaused(), pr.PendingSnapshot, pr.ins)
 }
 
 type inflights struct {
@@ -200,6 +202,13 @@ type inflights struct {
 	// buffer contains the index of the last entry
 	// inside one message.
 	buffer []uint64
+}
+
+func (i *inflights) String() string {
+	if i.count == 0 {
+		return "none"
+	}
+	return fmt.Sprintf("[%d,%d] (%d msgs)", i.start, i.buffer[i.count-1], i.count)
 }
 
 func newInflights(size int) *inflights {
